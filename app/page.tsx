@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import FlashcardComponent from './components/Flashcard';
 import CardManager from './components/CardManager';
 import Sidebar from './components/Sidebar';
@@ -22,12 +22,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load data from database on component mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -51,7 +46,12 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedChapter]);
+
+  // Load data from database on component mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const currentChapter = chapters.find(ch => ch.id === selectedChapter);
   const chapterCards = cards.filter(card => card.chapter_id === selectedChapter);

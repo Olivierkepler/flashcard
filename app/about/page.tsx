@@ -109,7 +109,7 @@ export default function AboutPage() {
           <div className="text-center">
             <p className="text-gray-600 mb-4">
               This flashcard application was built with modern web technologies and best practices. 
-              It's designed to be scalable, maintainable, and user-friendly.
+              It&apos;s designed to be scalable, maintainable, and user-friendly.
             </p>
             <div className="flex justify-center space-x-4">
               <div className="text-center">

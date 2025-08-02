@@ -67,7 +67,9 @@ export async function initializeDatabase() {
       'SELECT COUNT(*) as count FROM chapters'
     );
     
-    if ((existingChapters as any)[0].count === 0) {
+    const chaptersResult = existingChapters as { count: number }[];
+    
+    if (chaptersResult[0].count === 0) {
       await connection.execute(`
         INSERT INTO chapters (id, title, description, is_active) VALUES
         ('chapter-1', 'Chapter 1: Introduction', 'Basic concepts and fundamentals', true),
@@ -93,4 +95,4 @@ export async function initializeDatabase() {
   }
 }
 
-export default pool; 
+export default pool;

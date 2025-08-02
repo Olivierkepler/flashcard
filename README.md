@@ -209,18 +209,86 @@ This guide shows you how to deploy your flashcard app **completely for free** us
 
 #### 🎯 Free Stack Overview
 - **Frontend**: Vercel (Free tier)
-- **Database**: PlanetScale (Free tier)
+- **Database**: PlanetScale (Free tier) OR Vercel Postgres (Free tier)
 - **Domain**: Vercel subdomain (Free) or custom domain
 - **Total Cost**: $0/month
 
 #### 📊 Free Tier Limits
 - **Vercel**: 100GB bandwidth, 100 serverless function executions/day
 - **PlanetScale**: 1 database, 1 billion row reads/month, 10 million row writes/month
+- **Vercel Postgres**: 256MB storage, 100 hours/month (Hobby plan)
 - **Perfect for**: Personal projects, small teams, learning purposes
 
 ### 🚀 Step 1: Free Database Setup
 
-#### Option A: PlanetScale (Recommended - Best Free Tier)
+#### Option A: Vercel Postgres (Vercel's Own Database - Recommended)
+
+**Important Note**: Vercel doesn't offer MySQL in their free tier, but they offer **Vercel Postgres** which is a great alternative and works seamlessly with Vercel.
+
+1. **Create Vercel Postgres Database**
+   ```bash
+   # Go to https://vercel.com
+   # Sign up/login with GitHub
+   # Go to Storage tab → Create Database
+   # Choose "Postgres" → "Hobby" (Free)
+   ```
+
+2. **Database Configuration**
+   - **Plan**: Hobby (Free)
+   - **Storage**: 256MB (sufficient for flashcards)
+   - **Hours**: 100 hours/month
+   - **Region**: Choose closest to you
+
+3. **Install Vercel Postgres SDK**
+   ```bash
+   npm install @vercel/postgres
+   ```
+
+4. **Update Database Configuration**
+   ```typescript
+   // lib/database.ts
+   import { sql } from '@vercel/postgres';
+   
+   // Replace MySQL configuration with Postgres
+   export async function query(text: string, params?: any[]) {
+     return await sql.query(text, params);
+   }
+   
+   // Update your API routes to use Postgres
+   export async function getAllChapters() {
+     const { rows } = await sql`
+       SELECT * FROM chapters ORDER BY created_at DESC
+     `;
+     return rows;
+   }
+   ```
+
+5. **Update Database Schema for Postgres**
+   ```sql
+   -- chapters table (Postgres syntax)
+   CREATE TABLE chapters (
+     id VARCHAR(255) PRIMARY KEY,
+     title VARCHAR(255) NOT NULL,
+     description TEXT,
+     is_active BOOLEAN DEFAULT true,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+   
+   -- flashcards table (Postgres syntax)
+   CREATE TABLE flashcards (
+     id SERIAL PRIMARY KEY,
+     question TEXT NOT NULL,
+     answer TEXT NOT NULL,
+     category VARCHAR(255) NOT NULL,
+     chapter_id VARCHAR(255) NOT NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+   );
+   ```
+
+#### Option B: PlanetScale (MySQL - External Service)
 
 1. **Create Free PlanetScale Account**
    ```bash
@@ -255,7 +323,7 @@ This guide shows you how to deploy your flashcard app **completely for free** us
    };
    ```
 
-#### Option B: Railway (Alternative Free Option)
+#### Option C: Railway (Alternative Free Option)
 
 1. **Create Free Railway Account**
    ```bash
@@ -267,17 +335,6 @@ This guide shows you how to deploy your flashcard app **completely for free** us
 2. **Create MySQL Database**
    - Click "New Service" → "Database" → "MySQL"
    - Railway provides connection details automatically
-
-#### Option C: Neon (PostgreSQL Alternative)
-
-1. **Create Free Neon Account**
-   ```bash
-   # Go to https://neon.tech
-   # Sign up with GitHub
-   # Free tier: 3 projects, 0.5GB storage
-   ```
-
-2. **Note**: Requires switching from MySQL to PostgreSQL
 
 ### 🚀 Step 2: Free Vercel Deployment
 
@@ -313,7 +370,18 @@ This guide shows you how to deploy your flashcard app **completely for free** us
    - Framework: Next.js (auto-detected)
 
 4. **Configure Free Environment Variables**
-   In Vercel dashboard → Settings → Environment Variables:
+
+   **For Vercel Postgres:**
+   ```
+   # These are automatically set by Vercel when you create a Postgres database
+   POSTGRES_URL=your-vercel-postgres-url
+   POSTGRES_HOST=your-vercel-postgres-host
+   POSTGRES_DATABASE=your-vercel-postgres-database
+   POSTGRES_USERNAME=your-vercel-postgres-username
+   POSTGRES_PASSWORD=your-vercel-postgres-password
+   ```
+
+   **For PlanetScale (MySQL):**
    ```
    DB_HOST=your-planetscale-host
    DB_USER=your-planetscale-user
@@ -328,6 +396,56 @@ This guide shows you how to deploy your flashcard app **completely for free** us
 
 ### 🗄️ Step 3: Initialize Free Database
 
+#### For Vercel Postgres:
+1. **Create Database Tables**
+   ```bash
+   # Use Vercel Postgres dashboard or SQL editor
+   # Run the Postgres schema from Step 1
+   ```
+
+2. **Update Database Scripts**
+   ```javascript
+   // scripts/init-db.js (Postgres version)
+   const { sql } = require('@vercel/postgres');
+   
+   async function initializeDatabase() {
+     try {
+       // Create chapters table
+       await sql`
+         CREATE TABLE IF NOT EXISTS chapters (
+           id VARCHAR(255) PRIMARY KEY,
+           title VARCHAR(255) NOT NULL,
+           description TEXT,
+           is_active BOOLEAN DEFAULT true,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+         )
+       `;
+       
+       // Create flashcards table
+       await sql`
+         CREATE TABLE IF NOT EXISTS flashcards (
+           id SERIAL PRIMARY KEY,
+           question TEXT NOT NULL,
+           answer TEXT NOT NULL,
+           category VARCHAR(255) NOT NULL,
+           chapter_id VARCHAR(255) NOT NULL,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+         )
+       `;
+       
+       console.log('✅ Database initialized successfully');
+     } catch (error) {
+       console.error('❌ Database initialization failed:', error);
+     }
+   }
+   
+   initializeDatabase();
+   ```
+
+#### For PlanetScale (MySQL):
 1. **Update Database Script for Free Tier**
    ```javascript
    // scripts/init-db.js
@@ -377,7 +495,8 @@ This guide shows you how to deploy your flashcard app **completely for free** us
 - Error tracking
 
 #### Database Monitoring (Free)
-- PlanetScale dashboard shows usage
+- **Vercel Postgres**: Built-in dashboard in Vercel
+- **PlanetScale**: Dashboard shows usage
 - Connection status monitoring
 - Query performance insights
 
@@ -390,7 +509,7 @@ This guide shows you how to deploy your flashcard app **completely for free** us
 
 #### Database Security
 - SSL connections enabled
-- Automatic backups (PlanetScale)
+- Automatic backups (both Vercel Postgres and PlanetScale)
 - Access control through dashboard
 
 ### 💡 Free Tier Optimization Tips
@@ -409,7 +528,11 @@ module.exports = {
 
 #### Database Optimization
 ```sql
--- Add indexes for better performance
+-- For Postgres
+CREATE INDEX idx_flashcards_chapter_category ON flashcards(chapter_id, category);
+CREATE INDEX idx_chapters_active ON chapters(is_active);
+
+-- For MySQL
 CREATE INDEX idx_flashcards_chapter_category ON flashcards(chapter_id, category);
 CREATE INDEX idx_chapters_active ON chapters(is_active);
 ```
@@ -434,20 +557,26 @@ export async function GET() {
 - **100 serverless function executions/day**: Monitor usage in dashboard
 - **Solution**: Optimize API calls, implement caching
 
+#### Vercel Postgres Limits
+- **256MB storage**: Sufficient for thousands of flashcards
+- **100 hours/month**: More than enough for personal use
+- **Solution**: Monitor usage, optimize queries
+
 #### PlanetScale Limits
 - **1 billion row reads/month**: More than enough for flashcards
 - **10 million row writes/month**: Sufficient for normal usage
 - **Solution**: Monitor usage, optimize queries
 
 #### Scaling When Needed
-- **Upgrade paths available**: Vercel Pro ($20/month), PlanetScale Pro ($29/month)
+- **Upgrade paths available**: Vercel Pro ($20/month), Vercel Postgres Pro ($20/month), PlanetScale Pro ($29/month)
 - **Gradual scaling**: Start free, upgrade as needed
 - **No vendor lock-in**: Easy to migrate to other services
 
 ### 🎯 Free Deployment Checklist
 
-- [ ] Create free PlanetScale account
+- [ ] Choose database option (Vercel Postgres or PlanetScale)
 - [ ] Create free Vercel account
+- [ ] Create free database account
 - [ ] Push code to GitHub
 - [ ] Connect Vercel to GitHub repository
 - [ ] Set environment variables in Vercel
@@ -461,6 +590,7 @@ export async function GET() {
 | Service | Plan | Cost | What's Included |
 |---------|------|------|-----------------|
 | **Vercel** | Hobby | $0 | 100GB bandwidth, custom domains |
+| **Vercel Postgres** | Hobby | $0 | 256MB storage, 100 hours/month |
 | **PlanetScale** | Hobby | $0 | 1 database, 1B reads/month |
 | **GitHub** | Free | $0 | Unlimited public repos |
 | **Domain** | Vercel subdomain | $0 | SSL certificate included |
@@ -477,6 +607,50 @@ export async function GET() {
 - **Supabase**: PostgreSQL with generous free tier
 - **Firebase Firestore**: NoSQL database, free tier available
 - **MongoDB Atlas**: NoSQL database, free tier available
+
+### 🔄 Migration Guide: MySQL to Postgres
+
+If you want to use Vercel Postgres instead of MySQL:
+
+1. **Install Vercel Postgres SDK**
+   ```bash
+   npm install @vercel/postgres
+   ```
+
+2. **Update Database Configuration**
+   ```typescript
+   // Replace mysql2 with @vercel/postgres
+   import { sql } from '@vercel/postgres';
+   ```
+
+3. **Update API Routes**
+   ```typescript
+   // Before (MySQL)
+   const [rows] = await connection.execute('SELECT * FROM chapters');
+   
+   // After (Postgres)
+   const { rows } = await sql`SELECT * FROM chapters`;
+   ```
+
+4. **Update Schema**
+   ```sql
+   -- Change AUTO_INCREMENT to SERIAL
+   -- Update data types if needed
+   -- Test thoroughly
+   ```
+
+### 📋 Vercel MySQL vs Postgres Comparison
+
+| Feature | Vercel MySQL | Vercel Postgres |
+|---------|-------------|-----------------|
+| **Free Tier** | ❌ Not available | ✅ Hobby plan (256MB) |
+| **Integration** | External service needed | Native Vercel integration |
+| **Setup** | More complex | Simple, one-click |
+| **Performance** | Good | Excellent |
+| **Cost** | Free with PlanetScale | Free with Vercel |
+| **Recommendation** | Use PlanetScale | Use Vercel Postgres |
+
+**Bottom Line**: For the best free experience with Vercel, use **Vercel Postgres** as it's natively integrated and completely free in the Hobby plan!
 
 ## 🚀 Deployment Guide (Paid Options)
 
@@ -702,7 +876,7 @@ const pool = mysql.createPool({
    CREATE INDEX idx_chapters_active ON chapters(is_active);
    ```
 
-## 🧪 Testing Production Deployment
+## �� Testing Production Deployment
 
 ### Health Check
 ```bash

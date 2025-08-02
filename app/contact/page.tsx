@@ -45,7 +45,7 @@ export default function ContactPage() {
             Contact Us
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Have questions, suggestions, or need support? We'd love to hear from you!
+            Have questions, suggestions, or need support? We&apos;d love to hear from you!
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export default function ContactPage() {
                   <div className="text-green-600 text-xl mr-3">✅</div>
                   <div>
                     <h3 className="font-semibold text-green-800">Message Sent!</h3>
-                    <p className="text-green-700 text-sm">Thank you for contacting us. We'll get back to you soon!</p>
+                    <p className="text-green-700 text-sm">Thank you for contacting us. We&apos;ll get back to you soon!</p>
                   </div>
                 </div>
               </div>

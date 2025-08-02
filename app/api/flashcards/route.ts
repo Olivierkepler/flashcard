@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/database';
 
-// GET /api/flashcards - Get all flashcards (with optional chapter filter)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -9,20 +8,25 @@ export async function GET(request: NextRequest) {
     
     const connection = await pool.getConnection();
     
-    let query = 'SELECT * FROM flashcards';
-    let params: string[] = [];
+    let query = `
+      SELECT f.*, c.title as chapter_title 
+      FROM flashcards f 
+      LEFT JOIN chapters c ON f.chapter_id = c.id
+    `;
+    const queryParams: string[] = [];
     
     if (chapterId) {
-      query += ' WHERE chapter_id = ?';
-      params.push(chapterId);
+      query += ' WHERE f.chapter_id = ?';
+      queryParams.push(chapterId);
     }
     
-    query += ' ORDER BY created_at ASC';
+    query += ' ORDER BY f.created_at DESC';
     
-    const [flashcards] = await connection.execute(query, params);
+    const [rows] = await connection.execute(query, queryParams);
+    
     connection.release();
     
-    return NextResponse.json(flashcards);
+    return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching flashcards:', error);
     return NextResponse.json(
@@ -32,10 +36,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/flashcards - Create a new flashcard
 export async function POST(request: NextRequest) {
   try {
-    const { question, answer, category, chapterId } = await request.json();
+    const body = await request.json();
+    const { question, answer, category, chapterId } = body;
     
     if (!question || !answer || !category || !chapterId) {
       return NextResponse.json(
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    
     const connection = await pool.getConnection();
     
     // Verify chapter exists
@@ -52,7 +56,7 @@ export async function POST(request: NextRequest) {
       [chapterId]
     );
     
-    if ((chapters as any[]).length === 0) {
+    if (!Array.isArray(chapters) || chapters.length === 0) {
       connection.release();
       return NextResponse.json(
         { error: 'Chapter not found' },
@@ -64,14 +68,14 @@ export async function POST(request: NextRequest) {
       'INSERT INTO flashcards (question, answer, category, chapter_id) VALUES (?, ?, ?, ?)',
       [question, answer, category, chapterId]
     );
-
-    const newCardId = (result as any).insertId;
+    
+    const insertResult = result as { insertId: number };
     
     const [newCard] = await connection.execute(
       'SELECT * FROM flashcards WHERE id = ?',
-      [newCardId]
+      [insertResult.insertId]
     );
-
+    
     connection.release();
     
     return NextResponse.json(newCard[0], { status: 201 });

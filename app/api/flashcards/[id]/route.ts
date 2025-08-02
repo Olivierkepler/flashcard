@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/database';
 
-// GET /api/flashcards/[id] - Get a specific flashcard
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const connection = await pool.getConnection();
     
-    const [flashcards] = await connection.execute(
+    const [rows] = await connection.execute(
       'SELECT * FROM flashcards WHERE id = ?',
-      [params.id]
+      [id]
     );
-
+    
     connection.release();
     
-    if ((flashcards as any[]).length === 0) {
+    if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json(
         { error: 'Flashcard not found' },
         { status: 404 }
       );
     }
-
-    return NextResponse.json(flashcards[0]);
+    
+    return NextResponse.json(rows[0]);
   } catch (error) {
     console.error('Error fetching flashcard:', error);
     return NextResponse.json(
@@ -33,13 +33,14 @@ export async function GET(
   }
 }
 
-// PUT /api/flashcards/[id] - Update a flashcard
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { question, answer, category, chapterId } = await request.json();
+    const { id } = await params;
+    const body = await request.json();
+    const { question, answer, category, chapterId } = body;
     
     if (!question || !answer || !category || !chapterId) {
       return NextResponse.json(
@@ -47,44 +48,26 @@ export async function PUT(
         { status: 400 }
       );
     }
-
+    
     const connection = await pool.getConnection();
     
-    // Verify chapter exists
-    const [chapters] = await connection.execute(
-      'SELECT id FROM chapters WHERE id = ?',
-      [chapterId]
-    );
-    
-    if ((chapters as any[]).length === 0) {
-      connection.release();
-      return NextResponse.json(
-        { error: 'Chapter not found' },
-        { status: 404 }
-      );
-    }
-    
     const [result] = await connection.execute(
-      'UPDATE flashcards SET question = ?, answer = ?, category = ?, chapter_id = ? WHERE id = ?',
-      [question, answer, category, chapterId, params.id]
+      'UPDATE flashcards SET question = ?, answer = ?, category = ?, chapter_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [question, answer, category, chapterId, id]
     );
-
-    if ((result as any).affectedRows === 0) {
-      connection.release();
+    
+    connection.release();
+    
+    const updateResult = result as { affectedRows: number };
+    
+    if (updateResult.affectedRows === 0) {
       return NextResponse.json(
         { error: 'Flashcard not found' },
         { status: 404 }
       );
     }
-
-    const [updatedCard] = await connection.execute(
-      'SELECT * FROM flashcards WHERE id = ?',
-      [params.id]
-    );
-
-    connection.release();
     
-    return NextResponse.json(updatedCard[0]);
+    return NextResponse.json({ message: 'Flashcard updated successfully' });
   } catch (error) {
     console.error('Error updating flashcard:', error);
     return NextResponse.json(
@@ -94,28 +77,30 @@ export async function PUT(
   }
 }
 
-// DELETE /api/flashcards/[id] - Delete a flashcard
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const connection = await pool.getConnection();
     
     const [result] = await connection.execute(
       'DELETE FROM flashcards WHERE id = ?',
-      [params.id]
+      [id]
     );
-
+    
     connection.release();
     
-    if ((result as any).affectedRows === 0) {
+    const deleteResult = result as { affectedRows: number };
+    
+    if (deleteResult.affectedRows === 0) {
       return NextResponse.json(
         { error: 'Flashcard not found' },
         { status: 404 }
       );
     }
-
+    
     return NextResponse.json({ message: 'Flashcard deleted successfully' });
   } catch (error) {
     console.error('Error deleting flashcard:', error);
