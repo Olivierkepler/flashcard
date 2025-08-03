@@ -1,4 +1,4 @@
-import mysql from 'mysql2/promise';
+import mysql, { RowDataPacket } from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -19,7 +19,7 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 // Test database connection
-export async function testConnection() {
+export async function testConnection(): Promise<boolean> {
   try {
     const connection = await pool.getConnection();
     console.log('✅ Database connected successfully');
@@ -31,11 +31,16 @@ export async function testConnection() {
   }
 }
 
+// Result type for COUNT query
+interface CountResult {
+  count: number;
+}
+
 // Initialize database tables
-export async function initializeDatabase() {
+export async function initializeDatabase(): Promise<void> {
   try {
     const connection = await pool.getConnection();
-    
+
     // Create chapters table
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS chapters (
@@ -62,14 +67,12 @@ export async function initializeDatabase() {
       )
     `);
 
-    // Insert default chapters if they don't exist
-    const [existingChapters] = await connection.execute(
+    // Insert default chapters if none exist
+    const [existingChapters] = await connection.execute<RowDataPacket[]>(
       'SELECT COUNT(*) as count FROM chapters'
     );
-    
-    const chaptersResult = existingChapters as { count: number }[];
-    
-    if (chaptersResult[0].count === 0) {
+
+    if (existingChapters[0].count === 0) {
       await connection.execute(`
         INSERT INTO chapters (id, title, description, is_active) VALUES
         ('chapter-1', 'Chapter 1: Introduction', 'Basic concepts and fundamentals', true),

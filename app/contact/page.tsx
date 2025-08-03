@@ -16,13 +16,13 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulate form submission
     setTimeout(() => {
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
-      
+
       // Reset status after 3 seconds
       setTimeout(() => setSubmitStatus('idle'), 3000);
     }, 1000);
@@ -38,7 +38,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Navigation currentPage="contact" />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
@@ -53,14 +53,16 @@ export default function ContactPage() {
           {/* Contact Form */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">Send us a Message</h2>
-            
+
             {submitStatus === 'success' && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center">
                   <div className="text-green-600 text-xl mr-3">✅</div>
                   <div>
                     <h3 className="font-semibold text-green-800">Message Sent!</h3>
-                    <p className="text-green-700 text-sm">Thank you for contacting us. We&apos;ll get back to you soon!</p>
+                    <p className="text-green-700 text-sm">
+                      Thank you for contacting us. We&apos;ll get back to you soon!
+                    </p>
                   </div>
                 </div>
               </div>
@@ -155,7 +157,6 @@ export default function ContactPage() {
 
           {/* Contact Information */}
           <div className="space-y-6">
-            {/* General Contact */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Get in Touch</h2>
               <div className="space-y-4">
@@ -186,7 +187,6 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* FAQ Quick Links */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Quick Help</h2>
               <div className="space-y-3">
@@ -214,7 +214,6 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Social Links */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Follow Us</h2>
               <div className="flex space-x-4">
@@ -237,4 +236,4 @@ export default function ContactPage() {
       </div>
     </div>
   );
-} 
+}

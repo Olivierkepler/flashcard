@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Navigation currentPage="about" />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
@@ -133,4 +133,4 @@ export default function AboutPage() {
       </div>
     </div>
   );
-} 
+}
